@@ -87,3 +87,6 @@
 # BACKEND
 #dependencies
 /backend/node_modules
+
+# dotenv environment variables file
+/frontend/.env
