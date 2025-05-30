@@ -89,4 +89,4 @@
 /backend/node_modules
 
 # dotenv environment variables file
-/backend/.env
+/backend/src/config/.env
