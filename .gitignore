@@ -82,3 +82,8 @@
 
 # dataconnect generated files
 /frontend/.dataconnect
+
+
+# BACKEND
+#dependencies
+/backend/node_modules
