@@ -16,5 +16,9 @@
   "bugs": {
     "url": "https://github.com/wan-xin-15/Orbital-Test/issues"
   },
-  "homepage": "https://github.com/wan-xin-15/Orbital-Test#readme"
+  "homepage": "https://github.com/wan-xin-15/Orbital-Test#readme",
+  "dependencies": {
+    "nodemon": "^3.1.10"
+  },
+  "devDependencies": {}
 }
