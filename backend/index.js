@@ -1,8 +1,13 @@
 require("dotenv").config();
+console.log({
+  dbUser: process.env.DB_USERNAME,
+  dbHost: process.env.DB_HOST,
+  hasPassword: !!process.env.DB_PASSWORD, // Should show 'true'
+});
 const express = require("express");
 const app = express();
 const cors = require("cors");
-const pool = require("./config/db");
+const pool = require("./src/config/db");
 
 //middleware
 app.use(cors());
