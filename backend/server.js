@@ -33,7 +33,7 @@ initializePassport(
 // fetching users from database
 app.get('/users', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM users');
+    const result = await db.query('SELECT * FROM users');
     res.json(result.rows);
   } catch (err) {
     console.error(err);
@@ -82,7 +82,7 @@ app.get('/', checkAuthenticated, (req, res) => {
 })
 
 app.get('/login', checkNotAuthenticated, (req, res) => {
-    res.redner("login.ejs")
+    res.render("login.ejs")
 })
 
 app.get('/register', checkNotAuthenticated, (req, res) => {
