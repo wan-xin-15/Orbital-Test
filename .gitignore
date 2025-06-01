@@ -86,4 +86,4 @@
 # BACKEND 
 # dependencies
 /backend/node_modules
-/backend/src/config/.env
+/backend/.env
