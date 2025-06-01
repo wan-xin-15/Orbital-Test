@@ -2,15 +2,15 @@ require("dotenv").config();
 const express = require("express");
 const app = express();
 const cors = require("cors");
-const pool = require("./db");
+const pool = require("./config/db");
 
 //middleware
 app.use(cors());
 app.use(express.json()); //req.body
 
 //connect to frontend
-app.get("/getData", (req, res)=> {
-    res.send("")
+app.get("/getData", (req, res) => {
+  res.send("");
 });
 
 //ROUTES//
