@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/wan-xin-15/Orbital-Test/issues"
   },
-  "homepage": "https://github.com/wan-xin-15/Orbital-Test#readme"
+  "homepage": "https://github.com/wan-xin-15/Orbital-Test#readme",
+  "dependencies": {
+    "concurrently": "^9.1.2"
+  }
 }
