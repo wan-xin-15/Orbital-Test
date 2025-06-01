@@ -9,10 +9,14 @@ import {
   InputRightElement,
 } from "@chakra-ui/react";
 import { LuUser, LuLock } from "react-icons/lu";
+import axios from 'axios'
 
 const Login = () => {
   const [show, setShow] = React.useState(false);
-  const handleClick = () => setShow(!show);
+  const handleClick = () => {
+    setShow(!show);
+    axios.post('')
+  }
 
   return (
     <Flex

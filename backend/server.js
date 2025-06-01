@@ -3,29 +3,32 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 // import libraries installed using npm
-const express = require("express")
-const app = express()
+const express = require("express");
+const app = express();
 const mysql = require("mysql2/promise");
-const bcrypt = require("bcrypt") // importing bcrypt package
+const cors = require("cors"); // to access apis
+const bcrypt = require("bcrypt"); // importing bcrypt package
 const passport = require("passport")
 const initializePassport = require("./passport-config")
 const flash = require("express-flash")
 const session = require("express-session") 
 const methodOverride = require("method-override")
 
-initializePassport(
-    passport, 
-    email => users.find(user => user.email === email),
-    id => users.find(user => user.id === id)
-)
+app.use(cors());
 // store connections to mysql
-const pool = mysql.createPool({
+const db = mysql.createPool({
   user: "root",
   password: password,
   host: "localhost",
   port: port,
   database: db,
 });
+
+initializePassport(
+    passport, 
+    email => db.find(user => user.email === email),
+    id => db.find(user => user.id === id)
+)
 
 // fetching users from database
 app.get('/users', async (req, res) => {
@@ -50,7 +53,7 @@ app.use(passport.session())
 app.use(methodOverride("_method"))
 
 // login
-app.post("/login", checkNotAuthenticated, passport.authenticate("local", {
+app.post("/login", checkNotAuthenticated, passport.authenticate("local", { 
     successRedirect: "/",
     failureRedirect: "/login",
     failureFlash: true, // show error messages
@@ -108,4 +111,6 @@ function checkNotAuthenticated(req, res, next) {
     next()
 }
 console.log(users); // display newly registered in the console
-app.listen(5002)
+app.listen(5002, () => {
+    console.log("listening...");
+})
