@@ -23,11 +23,11 @@ app.get("/getData", (req, res) => {
 //CREATE
 app.post("/cafes", async (req, res) => {
   try {
-    const { name, location } = req.body;
+    const { cafeName, cafeLocation } = req.body;
     console.log(req.body);
     const newCafe = await pool.query(
-      "INSERT INTO cafes (name, location) VALUES (?, ?)",
-      [name, location]
+      "INSERT INTO cafes (cafeName, cafeLocation) VALUES (?, ?)",
+      [cafeName, cafeLocation]
     );
     res.json("Café added");
   } catch (err) {
@@ -60,11 +60,11 @@ app.get("/cafes/:id", async (req, res) => {
 app.put("/cafes/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, location } = req.body;
+    const { cafeName, cafeLocation } = req.body;
 
     const updateCafe = await pool.query(
-      "UPDATE cafes SET name = ?, location = ? WHERE id = ?",
-      [name, location, id]
+      "UPDATE cafes SET cafeName = ?, cafeLocation = ? WHERE id = ?",
+      [cafeName, cafeLocation, id]
     );
     res.json("Café was updated");
   } catch (err) {
