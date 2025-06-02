@@ -1,4 +1,19 @@
-import { Button, Flex, Text } from "@chakra-ui/react";
+import {
+  Button,
+  Flex,
+  Text,
+  useDisclosure,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalCloseButton,
+  ModalFooter,
+  FormControl,
+  FormLabel,
+  Input,
+} from "@chakra-ui/react";
 import React, { useState, useEffect } from "react";
 import Axios from "axios";
 
@@ -22,6 +37,69 @@ import Axios from "axios";
 
 const Cafes = () => {
   const [data, setData] = useState(null);
+  // Handle edit cafe info
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const initialRef = React.useRef(null);
+  const finalRef = React.useRef(null);
+  const [cafeName, setCafeName] = useState("");
+  const [cafeLocation, setCafeLocation] = useState("");
+  const [editedId, setEditedId] = useState("");
+
+  const handleEdit = async () => {
+    try {
+      await fetch(`http://localhost:5002/cafes/` + editedId, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          cafeName: cafeName,
+          cafeLocation: cafeLocation,
+        }),
+      });
+      setCafeName("");
+      setCafeLocation("");
+      onClose();
+      getData();
+    } catch (error) {
+      console.error("Error editing cafe:", error);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await fetch(`http://localhost:5002/cafes/` + editedId, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          cafeName: cafeName,
+          cafeLocation: cafeLocation,
+        }),
+      });
+    } catch (error) {
+      console.error("Error deleting cafe:", error);
+    }
+  };
+
+  // TODO
+  const handleAdd = async () => {
+    try {
+      await fetch(`http://localhost:5002/cafes/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          cafeName: cafeName,
+          cafeLocation: cafeLocation,
+        }),
+      });
+    } catch (error) {
+      console.error("Error adding cafe:", error);
+    }
+  };
+
+  const editIndex = (i: number) => {
+    setEditedId(Object(data)[i].id);
+    setCafeName(Object(data)[i].cafeName);
+    setCafeLocation(Object(data)[i].cafeLocation);
+  };
 
   const getData = async () => {
     const response = await Axios.get("http://localhost:5002/cafes");
@@ -42,7 +120,7 @@ const Cafes = () => {
         <a href="/home">Café Chronicles</a>
       </Button>
 
-      <Text fontSize="3xl"> Cafes List hehe </Text>
+      <Text fontSize="3xl"> Cafés </Text>
       {/* Flex Container */}
       <Flex
         alignItems="center"
@@ -70,8 +148,24 @@ const Cafes = () => {
             >
               <Text fontSize="2xl">{cafe.cafeName}</Text>
               <Text fontSize="lg">{cafe.cafeLocation}</Text>
-              <Button background="#DC6739">Edit</Button>
-              <Button background="#DC6739">Delete</Button>
+              <Button
+                background="#DC6739"
+                onClick={() => {
+                  editIndex(index);
+                  onOpen();
+                }}
+              >
+                Edit
+              </Button>
+              <Button
+                background="#DC6739"
+                onClick={() => {
+                  handleDelete();
+                  getData();
+                }}
+              >
+                Delete
+              </Button>
             </Flex>
           ))}
       </Flex>
@@ -82,9 +176,53 @@ const Cafes = () => {
         color="white"
         borderRadius="50px"
         width="50%"
+        onClick={() => {
+          onOpen();
+        }}
       >
         Add New
       </Button>
+
+      {/* Edit cafe popup */}
+      <Modal
+        // initialFocusRef={initialRef}
+        // finalFocusRef={finalRef}
+        isOpen={isOpen}
+        onClose={onClose}
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Edit Café</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody pb={6}>
+            <FormControl>
+              <FormLabel>Café Name</FormLabel>
+              <Input
+                ref={initialRef}
+                placeholder={cafeName}
+                value={cafeName}
+                onChange={(e) => setCafeName(e.target.value)}
+              />
+            </FormControl>
+
+            <FormControl mt={4}>
+              <FormLabel>Café Location</FormLabel>
+              <Input
+                placeholder={cafeLocation}
+                value={cafeLocation}
+                onChange={(e) => setCafeLocation(e.target.value)}
+              />
+            </FormControl>
+          </ModalBody>
+
+          <ModalFooter>
+            <Button colorScheme="blue" mr={3} onClick={handleEdit}>
+              Save
+            </Button>
+            <Button onClick={onClose}>Cancel</Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Flex>
   );
 };
