@@ -1,18 +1,20 @@
 require("dotenv").config();
 
-// debugging
+// DEBUGGING
 console.log({
   dbUser: process.env.DB_USERNAME,
   dbHost: process.env.DB_HOST,
   hasPassword: !!process.env.DB_PASSWORD, // Should show 'true'
 });
 
+// MAIN APP IMPORTS
 const express = require("express");
 const app = express();
+app.use(express.urlencoded({ extended: true }));
 const cors = require("cors");
 const pool = require("./src/config/db");
 
-//middleware
+// MIDDLEWARE
 app.use(cors());
 app.use(express.json()); //req.body
 
@@ -23,7 +25,7 @@ app.get("/getData", (req, res) => {
 
 //ROUTES//
 
-// CAFE ROUTE ---------
+// CAFE ROUTES ---------
 //CREATE
 app.post("/cafes", async (req, res) => {
   try {
@@ -89,155 +91,248 @@ app.delete("/cafes/:id", async (req, res) => {
 });
 
 // LOGIN ROUTE
+// ---------
 const bcrypt = require("bcrypt");
-const passport = require("passport");
-const flash = require("express-flash");
 const session = require("express-session");
-const methodOverride = require("method-override");
+const passport = require("passport");
 const LocalStrategy = require("passport-local").Strategy;
 
-app.use(express.urlencoded({ extended: false }));
-app.use(flash());
 app.use(
   session({
     secret: process.env.SESSION_SECRET,
     resave: false, // won't resave session variable if nothing is changed
-    saveUnintialized: false,
+    saveUninitialized: false,
   })
 );
+
+// Initialize Passport
 app.use(passport.initialize());
 app.use(passport.session());
-app.use(methodOverride("_method"));
-
 initializePassport(
   passport,
   async (username) => await getUserByUsername(username)
 );
 
-// GET ALL USERS
-app.get("/users", async (req, res) => {
+// Routes
+app.post("/login", passport.authenticate("local"), async (req, res) => {
   try {
-    const result = await pool.query("SELECT * FROM users");
-    res.json(result[0]);
+    res.json({
+      message: "Logged in successfully",
+      user: {
+        username: req.body.username,
+        password: req.body.password,
+      },
+    });
   } catch (err) {
-    console.error(err);
-    res.send("Error fetching data");
+    console.log(err);
+    res.json(err);
   }
 });
 
-//GET USER BY USERNAME
-app.get("/users/:username", async (req, res) => {
+app.post("/register", async (req, res) => {
   try {
-    const { username } = req.params;
-    const users = await pool.query("SELECT * FROM users WHERE username = ?", [
-      username,
-    ]);
-    if (users[0].length == 0) {
-      res.json("USER NOT FOUND");
-    } else {
-      res.json(users[0]);
-    } //get idx 0 to not display buffering stuff}
-  } catch (err) {
-    console.error(err.message);
-  }
-});
+    const { username, password } = req.body;
 
-//UPDATE USER DETAILS
-app.put("/users/:username", async (req, res) => {
-  try {
-    const { username } = req.params;
-    const { email, password } = req.body;
-
-    const updateUsers = await pool.query(
-      "UPDATE users SET email = ?, password = ? WHERE username = ?",
-      [email, password, username]
-    );
-    if (!updateUsers.affectedRows) {
-      res.json("USER NOT FOUND");
+    // Basic validation
+    if (!username || !password) {
+      return res.json("All fields are required");
     }
-    res.json("User was updated");
-  } catch (err) {
-    console.error(err.message);
-  }
-});
 
-//DELETE USER ACCOUNT
-app.delete("/users/:username", async (req, res) => {
-  try {
-    const { username } = req.params;
-    const deleteUsers = await pool.query(
-      "DELETE FROM users WHERE username = ?",
-      [username]
-    );
-
-    if (!deleteUsers.affectedRows) {
-      res.json("USER NOT FOUND");
+    // Check if user exists
+    const existingUser = await getUserByUsername(username);
+    if (existingUser) {
+      return res.json("Username already exists");
     }
-    res.json("User was deleted");
-  } catch (err) {
-    console.error(err.message);
+
+    // Create new user
+    const userId = await createUser(username, password);
+
+    // Auto-login after registration
+    req.login({ id: userId }, (err) => {
+      if (err) {
+        return res.json(err);
+      }
+      res.json({
+        message: "Registration and login successful",
+      });
+    });
+  } catch (error) {
+    res.json(error);
   }
 });
+
+app.post("/logout", (req, res) => {
+  req.logout((err) => {
+    if (err) {
+      console.error(err);
+      return res.json({
+        success: false,
+        message: "Logout failed",
+      });
+    }
+
+    // Destroy session if using sessions
+    req.session.destroy((err) => {
+      if (err) {
+        console.error(err);
+        return res.json({
+          success: false,
+          message: "Could not destroy session",
+        });
+      }
+    });
+    res.json({
+      success: true,
+      message: "Logged out successfully",
+    });
+  });
+});
+
+// //GET USER BY USERNAME
+// app.get("/login/:username", async (req, res) => {
+//   try {
+//     const { username } = req.params;
+//     const users = await pool.query("SELECT * FROM users WHERE username = ?", [
+//       username,
+//     ]);
+//     if (users[0].length == 0) {
+//       res.json("USER NOT FOUND");
+//     } else {
+//       res.json(users[0]);
+//     } //get idx 0 to not display buffering stuff}
+//   } catch (err) {
+//     console.error(err.message);
+//   }
+// });
+
+// // CHANGE PASSWORD
+// app.put("/login/:username", async (req, res) => {
+//   try {
+//     const { username } = req.params;
+//     const { email, password } = req.body;
+
+//     const updateUsers = await pool.query(
+//       "UPDATE users SET password = ? WHERE username = ?",
+//       [email, password, username]
+//     );
+//     if (!updateUsers.affectedRows) {
+//       res.json("USER NOT FOUND");
+//     }
+//     res.json("User was updated");
+//   } catch (err) {
+//     console.error(err.message);
+//   }
+// });
+
+// //DELETE USER ACCOUNT
+// app.delete("/login/:username", async (req, res) => {
+//   try {
+//     const { username } = req.params;
+//     const deleteUsers = await pool.query(
+//       "DELETE FROM users WHERE username = ?",
+//       [username]
+//     );
+
+//     if (!deleteUsers.affectedRows) {
+//       res.json("USER NOT FOUND");
+//     }
+//     res.json("User was deleted");
+//   } catch (err) {
+//     console.error(err.message);
+//   }
+// });
 
 // HELPER FUNCTIONS
+//GET ALL (DEBUGGING)
+app.get("/users", async (req, res) => {
+  try {
+    const users = await pool.query("SELECT * FROM users");
+    res.json(users[0]); //get idx 0 to not display buffering stuff
+  } catch (err) {
+    console.error(err.message);
+  }
+});
+
 async function getUserByUsername(username) {
   const normalizedUsername = username.toLowerCase().trim();
-
   try {
     const [rows] = await pool.query("SELECT * FROM users WHERE username = ?", [
       normalizedUsername,
     ]);
     return rows[0] || null;
-  } catch (error) {
-    console.error("Database error:", error);
-    throw error;
+  } catch (err) {
+    console.log(err);
+    throw err;
   }
 }
 
-async function getUserByEmail(email) {
-  const [rows] = await pool.query("SELECT * FROM users WHERE email = ?", [
-    email,
-  ]);
-  return rows[0] || null; // Return first user found or null
-}
-
-// NOT NEEDED
 async function getUserById(id) {
   const [rows] = await pool.query("SELECT * FROM users WHERE id = ?", [id]);
   return rows[0] || null;
 }
 
+async function createUser(username, password) {
+  // const hashedPassword = await hashedPassword(password);
+  const [result] = await pool.query(
+    "INSERT INTO users (username, password) VALUES (?,?)",
+    [username, password]
+  );
+  return result;
+}
+
 function initializePassport(passport, getUserByUsername) {
+  // Serialize user to session
+  passport.serializeUser((user, done) => done(null, user.username)); // Store only username in session
+
+  // Deserialize user from session
+  passport.deserializeUser(async (username, done) => {
+    try {
+      const user = await getUserByUsername(username);
+      done(null, user);
+    } catch (error) {
+      done(error);
+    }
+  });
+
+  // Local authentication strategy
   passport.use(
     new LocalStrategy(
-      { usernameField: "username" },
+      {
+        usernameField: "username",
+        passwordField: "password",
+      },
       async (username, password, done) => {
-        // get users by username
-        const user = await getUserByUsername(username);
-        if (username == null) {
-          return done(null, false, {
-            message: "No user found with that username",
-          });
-        }
-
         try {
+          // Input validation
+          if (!username || !password) {
+            return done(null, false, {
+              message: "Username and password are required",
+            });
+          }
+
+          // Get user by username
+          const user = await getUserByUsername(username);
+
+          // Check if user exists
+          if (!user) {
+            return done(null, false, {
+              message: "No user found with that username",
+            });
+          }
+
+          // Compare passwords
           if (await bcrypt.compare(password, user.password)) {
             return done(null, user);
           } else {
             return done(null, false, { message: "Password Incorrect" });
           }
-        } catch (e) {
-          console.log(e);
-          return done(e);
+        } catch (err) {
+          console.log(err);
+          return done(err);
         }
       }
     )
   );
-
-  passport.serializeUser((user, done) => done(null, user.id));
-  passport.deserializeUser((id, done) => {
-    return done(null, getUserById);
-  });
 }
 
 app.listen(5002, () => {
