@@ -64,9 +64,9 @@ const Cafes = () => {
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = async (id: number) => {
     try {
-      await fetch(`http://localhost:5002/cafes/` + editedId, {
+      await fetch(`http://localhost:5002/cafes/` + id, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -159,9 +159,9 @@ const Cafes = () => {
               </Button>
               <Button
                 background="#DC6739"
-                onClick={() => {
-                  handleDelete();
-                  getData();
+                onClick={async () => {
+                  await handleDelete(cafe.id);
+                  await getData();
                 }}
               >
                 Delete
